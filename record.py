@@ -13,4 +13,3 @@ parser.add_argument('--time', metavar = 'time', type = float, default = 15)
 
 
 args = parser.parse_args()
-print(args.accumulate(args.integers))
