@@ -1,17 +1,16 @@
----
-serial: ########
+--- 
+serial: 20400913
 init:
-    - UserSetSelector:
-        value: PySpin.UserSetDefault_Default
-    - UserSetLoad:
-    - LineSelector:
-        value: PySpin.LineSelector_Line2
-    - V3_3Enable:
-        value: True
+    - TriggerMode: 
+        value: PySpin.TriggerMode_Off
+    - TriggerSource: 
+        value: PySpin.TriggerSource_Line3
+    - TriggerOverlap: 
+        value: PySpin.TriggerOverlap_ReadOut
+    - TriggerMode:
+        value: PySpin.TriggerMode_On
     - AcquisitionFrameRateEnable:
         value: True
-    - AcquisitionFrameRate:
-        value: 220
     - ExposureMode:
         value: PySpin.ExposureMode_Timed
     - ExposureAuto:
@@ -23,14 +22,13 @@ init:
     - GainAuto:
         value: PySpin.GainAuto_Off
     - Gain:
-        value: 6
+        value: 8
     - BlackLevelSelector:
         value: PySpin.BlackLevelSelector_All
     - BlackLevel:
         value: 0
     - GammaEnable:
         value: False
-    - PixelFormat:
-        value: PySpin.PixelFormat_Mono16
-    - AdcBitDepth:
-        value: PySpin.AdcBitDepth_Bit12
+    - AcquisitionFrameRate:
+        value: 220
+

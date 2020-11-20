@@ -1,17 +1,12 @@
 ---
-serial: ########
+serial: 20400920
 init:
-    - UserSetSelector:
-        value: PySpin.UserSetDefault_Default
-    - UserSetLoad:
     - LineSelector:
         value: PySpin.LineSelector_Line2
     - V3_3Enable:
         value: True
     - AcquisitionFrameRateEnable:
         value: True
-    - AcquisitionFrameRate:
-        value: 220
     - ExposureMode:
         value: PySpin.ExposureMode_Timed
     - ExposureAuto:
@@ -30,7 +25,6 @@ init:
         value: 0
     - GammaEnable:
         value: False
-    - PixelFormat:
-        value: PySpin.PixelFormat_Mono16
-    - AdcBitDepth:
-        value: PySpin.AdcBitDepth_Bit12
+    - AcquisitionFrameRate:
+        value: 220
+    
