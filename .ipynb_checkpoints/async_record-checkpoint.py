@@ -1,4 +1,4 @@
-from pyspin import PySpin
+import PySpin
 from camera import Camera
 from multiprocessing import Process
 import png
