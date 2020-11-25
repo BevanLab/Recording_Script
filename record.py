@@ -9,8 +9,8 @@ parser = argparse.ArgumentParser(description='Process Camera Inputs.')
 
 
 parser.add_argument('--task', metavar = 'task', type = str, default = 'open-field')
-parser.add_argument('--fps', metavar = 'fps', type = int, default = 220)
-parser.add_argument('--time', metavar = 'time', type = float, default = 15)
+parser.add_argument('--fps', metavar = 'fps', type = int, default = 100)
+parser.add_argument('--time', metavar = 'time', type = float, default = 600)
 
 
 args = parser.parse_args()

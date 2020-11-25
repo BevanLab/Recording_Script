@@ -16,13 +16,13 @@ init:
     - ExposureAuto:
         value: PySpin.ExposureAuto_Off
     - ExposureTime:
-        value: 60000
+        value: 1621 
     - GainSelector:
         value: PySpin.GainSelector_All
     - GainAuto:
         value: PySpin.GainAuto_Off
     - Gain:
-        value: 8
+        value: 39.5 
     - BlackLevelSelector:
         value: PySpin.BlackLevelSelector_All
     - BlackLevel:
@@ -30,5 +30,5 @@ init:
     - GammaEnable:
         value: False
     - AcquisitionFrameRate:
-        value: 220
+        value: 100
 

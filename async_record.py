@@ -8,35 +8,49 @@ import numpy as np
 import asyncio
 import os
 from concurrent.futures import ThreadPoolExecutor
+import cv2
 
 parser = argparse.ArgumentParser(description='Process Camera Inputs.')
 
 
 parser.add_argument('--task', metavar = 'task', type = str, default = 'open-field')
-parser.add_argument('--fps', metavar = 'fps', type = int, default = 220)
-parser.add_argument('--time', metavar = 'time', type = float, default = 15)
+parser.add_argument('--fps', metavar = 'fps', type = int, default = 100)
+parser.add_argument('--time', metavar = 'time', type = float, default = 10)
+parser.add_argument('--numsavers', metavar = 'num-savers', type = int, default = 1)
 
 
 
 args = parser.parse_args()
-
-
-
-
+SAVE_DIRS = ['C:\\Users\\jwc909\\Videos\\top', 'C:\\Users\\jwc909\\Videos\\bottom', 'C:\\Users\\jwc909\\Videos\\side']
+NUM_SAVERS = args.numsavers
+NUM_IMAGES = int(args.fps * args.time)  # The number of images to capture
+NUM_BUFFERS = 5000
+print(NUM_IMAGES)
+print(NUM_SAVERS)
 async def acquire_images(queue: asyncio.Queue, cam: PySpin.Camera):
     """
     A coroutine that captures `NUM_IMAGES` images from `cam` and puts them along
     with the camera serial number as a tuple into the `queue`.
     """
     # Set up camera
-    cam_id = cam.GetUniqueID()
-    cam.Init()
-    cam.BeginAcquisition()
+
+    cam_id = cam.serial
+    print(cam_id)
+    cam.start_aquisition()
+    cam = cam.cam
+    #cam.Init()
+
+    print('aquisition started')
+
     prev_frame_ID = 0
 
     # Acquisition loop
     for i in range(NUM_IMAGES):
-        img = cam.GetNextImage()
+        try:
+            img = cam.GetNextImage()
+        except Exception as e:
+            print(e)
+
         frame_ID = img.GetFrameID()
         if img.IsIncomplete():
             print('WARNING: img incomplete', frame_ID,
@@ -45,9 +59,10 @@ async def acquire_images(queue: asyncio.Queue, cam: PySpin.Camera):
             prev_frame_ID = frame_ID
             continue
         if frame_ID != prev_frame_ID + 1:
-            print('WARNING: skipped frames', frame_ID)
+            print('WARNING: skipped frame', frame_ID)
         prev_frame_ID = frame_ID
         queue.put_nowait((img, cam_id))
+
         print('Queue size:', queue.qsize())
         print('[{}] Acquired image {}'.format(cam_id, frame_ID))
         await asyncio.sleep(0)  # This is necessary for context switches
@@ -60,7 +75,7 @@ async def acquire_images(queue: asyncio.Queue, cam: PySpin.Camera):
 
     
     
-async def save_images(queue: asyncio.Queue, save_dirs: dict, ext='.png'):
+async def save_images(queue: asyncio.Queue, save_dirs: dict, ext='.Raw'):
     """
     A coroutine that gets images from the `queue` and saves
     them using the global Thread Pool Executor.
@@ -75,10 +90,15 @@ async def save_images(queue: asyncio.Queue, save_dirs: dict, ext='.png'):
         # Receive image
         image, cam_id = await queue.get()
         # Create filename
+        #print('image received for saving')
         frame_id = image.GetFrameID()
-        filename = cam_id + '_' + str(frame_id) + ext
+        filename = str(frame_id) + ext
+        
+        print(save_dirs[cam_id])
         filename = os.path.join(save_dirs[cam_id], filename)
+        print(filename)
         # Save the image using a pool of threads
+        #print('saving file ' + filename )
         await loop.run_in_executor(tpe, save_image, image, filename)
         queue.task_done()
         print('[{}] Saved image {}'.format(cam_id, filename))
@@ -89,7 +109,11 @@ def save_image(image: PySpin.Image, filename: str):
     Saves the given `image` under the given `filename`.
     """
     # Notice how CPU time is minimized and I/O time is maximized
+    #print(filename + ' is being saved')
+    #np_img = image.GetNDArray()
     image.Save(filename)
+    #cv2.imwrite(filename, np_img)
+    #print(filename + ' saved')
 
     
     
@@ -103,16 +127,52 @@ async def main():
     queue = asyncio.Queue()
 
     # Match serial numbers to save locations
-    assert len(cam_list) <= len(SAVE_DIRS), 'More cameras than save directories'
+    #assert len(cam_list) <= len(SAVE_DIRS), 'More cameras than save directories'
     #camera_sns = [cam.GetUniqueID() for cam in cam_list]
-    side = Camera('20400920', True, system, 'side', 'side.yaml')
+    
     bottom = Camera('20400910', False, system, 'bottom', 'bottom.yaml')
     top = Camera('20400913', False, system, 'top', 'top.yaml')
-    camera_sns = [side.serial]
-    SAVE_DIRS = ['C:\\Videos\\side']
+    side = Camera('20400920', True, system, 'side', 'side.yaml')
+    
+    for camera in [top, bottom, side]:
+        cam = camera.cam
+        s_node_map = cam.GetTLStreamNodeMap()
+
+        # Set stream buffer Count Mode to manual
+        stream_buffer_count_mode = PySpin.CEnumerationPtr(s_node_map.GetNode('StreamBufferCountMode'))
+        if not PySpin.IsAvailable(stream_buffer_count_mode) or not PySpin.IsWritable(stream_buffer_count_mode):
+            print('Unable to set Buffer Count Mode (node retrieval). Aborting...\n')
+            return False
+
+        stream_buffer_count_mode_manual = PySpin.CEnumEntryPtr(stream_buffer_count_mode.GetEntryByName('Manual'))
+        if not PySpin.IsAvailable(stream_buffer_count_mode_manual) or not PySpin.IsReadable(stream_buffer_count_mode_manual):
+            print('Unable to set Buffer Count Mode entry (Entry retrieval). Aborting...\n')
+            return False
+
+        stream_buffer_count_mode.SetIntValue(stream_buffer_count_mode_manual.GetValue())
+        print('Stream Buffer Count Mode set to manual...')
+
+        # Retrieve and modify Stream Buffer Count
+        buffer_count = PySpin.CIntegerPtr(s_node_map.GetNode('StreamBufferCountManual'))
+        if not PySpin.IsAvailable(buffer_count) or not PySpin.IsWritable(buffer_count):
+            print('Unable to set Buffer Count (Integer node retrieval). Aborting...\n')
+            return False
+
+        # Display Buffer Info
+        print('Default Buffer Count: %d' % buffer_count.GetValue())
+        print('Maximum Buffer Count: %d' % buffer_count.GetMax())
+
+        buffer_count.SetValue(NUM_BUFFERS)
+
+        print('Buffer count now set to: %d' % buffer_count.GetValue())
+        
+
+
+    camera_sns = [top.serial, bottom.serial,side.serial ]
+    
     save_dir_per_cam = dict(zip(camera_sns, SAVE_DIRS))
-    NUM_IMAGES = args.fps * args.time  # The number of images to capture
-    NUM_SAVERS = 20
+    
+    cam_list = [top, bottom, side]
     # Start the acquisition and save coroutines
     acquisition = [asyncio.gather(acquire_images(queue, cam)) for cam in cam_list]
     savers = [asyncio.gather(save_images(queue, save_dir_per_cam)) for _ in range(NUM_SAVERS)]
@@ -126,6 +186,7 @@ async def main():
         c.cancel()
 
     # Clean up
+    cam_list = system.GetCameras()
     cam_list.Clear()
     system.ReleaseInstance()
 

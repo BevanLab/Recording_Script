@@ -1,5 +1,6 @@
 import yaml
-from pyspin import PySpin
+import PySpin
+#from pyspin import PySpin
 import os
 
 def setup_cam(cam, yaml_path):
