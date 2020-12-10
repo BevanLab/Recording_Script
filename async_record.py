@@ -14,17 +14,17 @@ parser = argparse.ArgumentParser(description='Process Camera Inputs.')
 
 
 parser.add_argument('--task', metavar = 'task', type = str, default = 'open-field')
-parser.add_argument('--fps', metavar = 'fps', type = int, default = 100)
-parser.add_argument('--time', metavar = 'time', type = float, default = 10)
+parser.add_argument('--fps', metavar = 'fps', type = int, default = 200)
+parser.add_argument('--time', metavar = 'time', type = float, default = 60*5)
 parser.add_argument('--numsavers', metavar = 'num-savers', type = int, default = 1)
 
 
 
 args = parser.parse_args()
-SAVE_DIRS = ['C:\\Users\\jwc909\\Videos\\top', 'C:\\Users\\jwc909\\Videos\\bottom', 'C:\\Users\\jwc909\\Videos\\side']
+SAVE_DIRS = ['D:\\top', 'D:\\bottom', 'D:\\side']
 NUM_SAVERS = args.numsavers
 NUM_IMAGES = int(args.fps * args.time)  # The number of images to capture
-NUM_BUFFERS = 5000
+NUM_BUFFERS = 3000
 print(NUM_IMAGES)
 print(NUM_SAVERS)
 async def acquire_images(queue: asyncio.Queue, cam: PySpin.Camera):

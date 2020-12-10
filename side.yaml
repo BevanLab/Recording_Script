@@ -26,5 +26,5 @@ init:
     - GammaEnable:
         value: False
     - AcquisitionFrameRate:
-        value: 100
+        value: 200
     
